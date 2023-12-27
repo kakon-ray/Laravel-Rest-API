@@ -37,21 +37,33 @@ class UserGuestController extends Controller
             };
 
             return response()->json(['msg' => $msg], 400);
-        }
-
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-
-        ]);
-
-        if ($user) {
-            return response()->json(['msg' => 'Registation Completed'], 200);
         } else {
-            return response()->json(['msg' => 'Registation Faild'], 400);
+            DB::beginTransaction();
+            try {
+
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+
+                ]);
+
+                DB::commit();
+            } catch (\Exception $err) {
+                $user = null;
+            }
+
+            if($user != null){
+                return response()->json(['msg' => 'Registation Completed'], 200);
+            }else{
+                return response()->json([
+                    'msg' => 'Internal Server Error',
+                    'err_msg' => $err->getMessage()
+                ], 500);
+            }
         }
+
+
     }
 
     function delete($id)
@@ -84,7 +96,7 @@ class UserGuestController extends Controller
         $user =  User::find($request->id);
 
         if (is_null($user)) {
-            return response()->json(['message' => "User dosen't exists"], 404);
+            return response()->json(['msg' => "User dosen't exists"], 404);
         } else {
             $arrayRequest = [
                 "name" => $request->name,
@@ -104,7 +116,7 @@ class UserGuestController extends Controller
                     $msg = $item;
                 };
 
-                return response()->json(['message' => $msg], 400);
+                return response()->json(['msg' => $msg], 400);
             } else {
 
                 DB::beginTransaction();
@@ -124,13 +136,13 @@ class UserGuestController extends Controller
                 if (is_null($user)) {
                     return response()->json([
                         'status' => 0,
-                        'message' => 'Internal Server Error',
-                        'err_message' => $err->getMessage()
+                        'msg' => 'Internal Server Error',
+                        'err_msg' => $err->getMessage()
                     ], 500);
                 } else {
                     return response()->json([
                         'status' => 0,
-                        'message' => 'Profile Update Successfully',
+                        'msg' => 'Profile Update Successfully',
                     ], 200);
                 }
             }
@@ -142,7 +154,7 @@ class UserGuestController extends Controller
         $user =  User::find($request->id);
 
         if (is_null($user)) {
-            return response()->json(['message' => "User dosen't exists"], 404);
+            return response()->json(['msg' => "User dosen't exists"], 404);
         } else {
 
             $arrayRequest = [
@@ -164,7 +176,7 @@ class UserGuestController extends Controller
                     $msg = $item;
                 };
 
-                return response()->json(['message' => $msg], 400);
+                return response()->json(['msg' => $msg], 400);
             } else {
 
                 if (Hash::check($request->old_password, $user->password)) {
@@ -184,17 +196,17 @@ class UserGuestController extends Controller
                     if (is_null($user)) {
                         return response()->json([
                             'status' => 0,
-                            'message' => 'Internal Server Error',
-                            'err_message' => $err->getMessage()
+                            'msg' => 'Internal Server Error',
+                            'err_msg' => $err->getMessage()
                         ], 500);
                     } else {
                         return response()->json([
                             'status' => 0,
-                            'message' => 'Password Changed',
+                            'msg' => 'Password Changed',
                         ], 200);
                     }
                 } else {
-                    return response()->json(['message' => "Old Password Dosen't Match"], 404);
+                    return response()->json(['msg' => "Old Password Dosen't Match"], 404);
                 }
             }
         }
